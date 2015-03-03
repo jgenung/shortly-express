@@ -1,4 +1,5 @@
 var express = require('express');
+var session = require('express-session');
 var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
@@ -13,48 +14,44 @@ var Click = require('./app/models/click');
 
 var app = express();
 
+app.use(session({
+  secret: 'f3j9ajf9AI4Q3;KFLAS',
+  resave: true,
+  saveUninitialized: false
+}));
+
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
 app.use(partials());
-// Parse JSON (uniform resource locators)
 app.use(bodyParser.json());
-// Parse forms (signup/login)
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
-// app.use(express.basicAuth(function(username, password, callback){
-//   var result = false;
 
-//    db.knex('users')
-//     .where('username', '=', username)
-//     .then(function(users){
-//       if(users['0']){
-//         var hashPassword = users['0']['password'];
-//         if(util.compare(req.body.password, hashPassword)){
-//           result = true;
-//         }
-//       }
-//     callback(null, result);
-//     });
+var session = function(req){
+  req.session.id = 't123';
+}
 
-// }));
-
-
-app.get('/',
+app.get('/', util.authenticate,
+//app.get('/',
 function(req, res) {
   res.render('index');
   res.end();
 });
 
-app.get('/create',
-function(req, res) {
-  res.render('index');
+app.get('/create', util.authenticate,
+//app.get('/create',
+  function(req, res) {
+    res.render('index');
+    res.end();
 });
 
-app.get('/links',
+app.get('/links', util.authenticate,
+//app.get('/links',
 function(req, res) {
   Links.reset().fetch().then(function(links) {
     res.send(200, links.models);
+    //res.end();
   });
 });
 
@@ -66,26 +63,22 @@ function(req,res){
 
 app.post('/login',
 function(req, res){
-  //var user = new User(req.body);
   var username = req.body.username;
   db.knex('users')
     .where('username', '=', username)
     .then(function(users){
-      console.log("THIS IS THE LOGIN DATA", users, req.body.password);
       if(users['0']){
         var hashPassword = users['0']['password'];
         if(util.compare(req.body.password, hashPassword)){
-          res.redirect('/');
+          util.createSession(req, res);
         }
         else{
-          //console.log("bad password");
           res.send(404);
           res.end();
         }
       }
       else{
         res.redirect('/login');
-        //res.end();
       }
     });
 });
@@ -117,8 +110,6 @@ function(req, res){
   })
 
 });
-
-
 
 app.post('/links',
 function(req, res) {
@@ -169,7 +160,8 @@ function(req, res) {
 app.get('/*', function(req, res) {
   new Link({ code: req.params[0] }).fetch().then(function(link) {
     if (!link) {
-      res.redirect('/');
+      //res.redirect('/');
+      res.redirect('/login');
     } else {
       var click = new Click({
         link_id: link.get('id')

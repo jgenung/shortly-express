@@ -60,7 +60,7 @@ describe('', function() {
       });
   });
 
-  describe('Link creation:', function(){
+  xdescribe('Link creation:', function(){
 
     var requestWithSession = request.defaults({jar: true});
     beforeEach(function(done){      // create a user that we can then log-in with
@@ -148,7 +148,7 @@ describe('', function() {
 
     }); // 'Shortening links'
 
-    describe('With previously saved urls:', function(){
+    xdescribe('With previously saved urls:', function(){
 
       var link;
 
@@ -252,9 +252,11 @@ describe('', function() {
         db.knex('users')
           .where('username', '=', 'Svnh')
           .then(function(res) {
+            console.log(res[0]);
             if (res[0] && res[0]['username']) {
               var user = res[0]['username'];
             }
+            console.log(user);
             expect(user).to.equal('Svnh');
             done();
           }).catch(function(err) {
