@@ -22,25 +22,105 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
+// app.use(express.basicAuth(function(username, password, callback){
+//   var result = false;
 
-app.get('/', 
+//    db.knex('users')
+//     .where('username', '=', username)
+//     .then(function(users){
+//       if(users['0']){
+//         var hashPassword = users['0']['password'];
+//         if(util.compare(req.body.password, hashPassword)){
+//           result = true;
+//         }
+//       }
+//     callback(null, result);
+//     });
+
+// }));
+
+
+app.get('/',
+function(req, res) {
+  res.render('index');
+  res.end();
+});
+
+app.get('/create',
 function(req, res) {
   res.render('index');
 });
 
-app.get('/create', 
-function(req, res) {
-  res.render('index');
-});
-
-app.get('/links', 
+app.get('/links',
 function(req, res) {
   Links.reset().fetch().then(function(links) {
     res.send(200, links.models);
   });
 });
 
-app.post('/links', 
+app.get('/login',
+function(req,res){
+  res.render('login');
+  res.end();
+});
+
+app.post('/login',
+function(req, res){
+  //var user = new User(req.body);
+  var username = req.body.username;
+  db.knex('users')
+    .where('username', '=', username)
+    .then(function(users){
+      console.log("THIS IS THE LOGIN DATA", users, req.body.password);
+      if(users['0']){
+        var hashPassword = users['0']['password'];
+        if(util.compare(req.body.password, hashPassword)){
+          res.redirect('/');
+        }
+        else{
+          //console.log("bad password");
+          res.send(404);
+          res.end();
+        }
+      }
+      else{
+        res.redirect('/login');
+        //res.end();
+      }
+    });
+});
+
+app.get('/signup',
+function(req,res){
+  res.render('signup');
+  res.end();
+});
+
+app.post('/signup',
+function(req, res){
+  var username = req.body['username'];
+  new User({ username: username }).fetch().then(function(found){
+    if(found){
+      res.send(404);
+      res.end();
+    }
+    else{
+      var pass = util.hash(req.body['password']);
+      var user = new User({username: username, password: pass})
+        .save()
+        .then(function(newUser){
+          Users.add(newUser);
+        });
+      res.redirect('/');
+    }
+
+  })
+
+});
+
+
+
+app.post('/links',
 function(req, res) {
   var uri = req.body.url;
 
